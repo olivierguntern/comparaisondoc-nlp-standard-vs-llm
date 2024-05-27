@@ -11,10 +11,6 @@ model = GPT2LMHeadModel.from_pretrained(model_name)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-# Variables globales pour stocker le texte du CV et de l'offre d'emploi
-cv_text = ""
-job_text = ""
-
 # Fonction pour générer les réponses GPT-2
 def generate_response(prompt, max_new_tokens=150):
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
@@ -45,64 +41,31 @@ def add_message(message, sender="User"):
 
 # Fonction pour envoyer un message
 def send_message(event=None):
-    user_input = user_entry.get()
-    if user_input.strip() == "":
+    user_input = user_entry.get("1.0", tk.END).strip()
+    if user_input == "":
         return
     add_message(user_input, "User")
-    user_entry.delete(0, tk.END)
+    user_entry.delete("1.0", tk.END)
     process_user_input(user_input)
 
 # Fonction pour traiter l'entrée utilisateur
 def process_user_input(user_input):
-    global cv_text, job_text
-    if user_input.lower().startswith("cv:"):
-        cv_text = user_input[len("cv:"):].strip()
-        add_message("CV enregistré. Vous pouvez maintenant entrer une offre d'emploi en commençant par 'offre:'.", "Bot")
-    elif user_input.lower().startswith("offre:"):
-        job_text = user_input[len("offre:"):].strip()
-        add_message("Offre d'emploi enregistrée. Vous pouvez maintenant analyser ou comparer les documents.", "Bot")
-    elif "analyse ce cv" in user_input.lower():
-        if cv_text:
-            prompt = f"Analyse le CV suivant:\n{cv_text}\n\nAnalyse complète du CV :"
-            cv_analysis = generate_response(prompt)
-            add_message(f"Analyse du CV: {cv_analysis}", "Bot")
-        else:
-            add_message("Aucun CV enregistré. Veuillez entrer un CV en commençant par 'cv:'.", "Bot")
-    elif "analyse cette offre" in user_input.lower():
-        if job_text:
-            prompt = f"Analyse l'offre d'emploi suivante:\n{job_text}\n\nAnalyse complète de l'offre d'emploi :"
-            job_analysis = generate_response(prompt)
-            add_message(f"Analyse de l'offre d'emploi: {job_analysis}", "Bot")
-        else:
-            add_message("Aucune offre d'emploi enregistrée. Veuillez entrer une offre d'emploi en commençant par 'offre:'.", "Bot")
-    elif "compare" in user_input.lower():
-        if cv_text and job_text:
-            prompt = f"Compare le CV suivant:\n{cv_text}\n\navec l'offre d'emploi suivante:\n{job_text}\n\nComparaison détaillée entre le CV et l'offre d'emploi :"
-            comparison = generate_response(prompt)
-            add_message(f"Comparaison: {comparison}", "Bot")
-        else:
-            add_message("Veuillez enregistrer un CV et une offre d'emploi avant de les comparer.", "Bot")
-    else:
-        add_message("Commande non reconnue. Veuillez entrer un CV en commençant par 'cv:' ou une offre d'emploi en commençant par 'offre:'.", "Bot")
+    prompt = f"Analyse le texte suivant:\n{user_input}\n\nAnalyse complète :"
+    analysis = generate_response(prompt)
+    add_message(f"Analyse: {analysis}", "Bot")
 
 # Fonction pour sélectionner les fichiers PDF et extraire leur texte
-def select_pdfs(is_cv=True):
+def select_pdfs():
     pdf_paths = filedialog.askopenfilenames(filetypes=[("PDF files", "*.pdf")])
     if pdf_paths:
         extracted_texts = extract_text_from_pdfs(pdf_paths)
-        text_type = "CV" if is_cv else "offre d'emploi"
         for text in extracted_texts:
-            add_message(f"Texte extrait du {text_type} PDF:\n{text}", "Bot")
-            if is_cv:
-                global cv_text
-                cv_text = text
-            else:
-                global job_text
-                job_text = text
+            add_message(f"Texte extrait du PDF:\n{text}", "Bot")
+            user_entry.insert(tk.END, text + "\n\n")
 
 # Création de l'interface utilisateur
 root = tk.Tk()
-root.title("Chatbot d'Analyse de CV et d'Offres d'Emploi")
+root.title("Chatbot d'Analyse de Textes")
 
 chat_frame = tk.Frame(root)
 chat_frame.pack(padx=10, pady=5, fill="both", expand=True)
@@ -110,9 +73,8 @@ chat_frame.pack(padx=10, pady=5, fill="both", expand=True)
 chat_text = scrolledtext.ScrolledText(chat_frame, state=tk.DISABLED, wrap=tk.WORD)
 chat_text.pack(padx=5, pady=5, fill="both", expand=True)
 
-user_entry = tk.Entry(root, width=100)
+user_entry = tk.Text(root, height=5, wrap=tk.WORD)
 user_entry.pack(padx=5, pady=5, fill="x")
-user_entry.bind("<Return>", send_message)
 
 button_frame = tk.Frame(root)
 button_frame.pack(padx=10, pady=5, fill="x")
@@ -120,10 +82,7 @@ button_frame.pack(padx=10, pady=5, fill="x")
 send_button = tk.Button(button_frame, text="Envoyer", command=send_message)
 send_button.pack(side="left", padx=5)
 
-cv_pdf_button = tk.Button(button_frame, text="Sélectionner des fichiers PDF pour les CV", command=lambda: select_pdfs(is_cv=True))
-cv_pdf_button.pack(side="left", padx=5)
-
-job_pdf_button = tk.Button(button_frame, text="Sélectionner des fichiers PDF pour les descriptions de postes", command=lambda: select_pdfs(is_cv=False))
-job_pdf_button.pack(side="left", padx=5)
+pdf_button = tk.Button(button_frame, text="Sélectionner des fichiers PDF", command=select_pdfs)
+pdf_button.pack(side="left", padx=5)
 
 root.mainloop()
