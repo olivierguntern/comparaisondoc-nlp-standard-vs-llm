@@ -11,6 +11,10 @@ model = GPT2LMHeadModel.from_pretrained(model_name)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
+# Variables globales pour stocker le texte du CV et de l'offre d'emploi
+cv_text = ""
+job_text = ""
+
 # Fonction pour générer les réponses GPT-2
 def generate_response(prompt, max_new_tokens=150):
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
@@ -51,13 +55,12 @@ def send_message(event=None):
 # Fonction pour traiter l'entrée utilisateur
 def process_user_input(user_input):
     global cv_text, job_text
-    if "cv:" in user_input.lower():
+    if user_input.lower().startswith("cv:"):
         cv_text = user_input[len("cv:"):].strip()
         add_message("CV enregistré. Vous pouvez maintenant entrer une offre d'emploi en commençant par 'offre:'.", "Bot")
-    elif "offre:" in user_input.lower():
+    elif user_input.lower().startswith("offre:"):
         job_text = user_input[len("offre:"):].strip()
-        add_message("Offre d'emploi enregistrée. Analyse en cours...", "Bot")
-        analyze_and_compare()
+        add_message("Offre d'emploi enregistrée. Vous pouvez maintenant analyser ou comparer les documents.", "Bot")
     elif "analyse ce cv" in user_input.lower():
         if cv_text:
             prompt = f"Analyse le CV suivant:\n{cv_text}\n\nAnalyse complète du CV :"
@@ -65,34 +68,22 @@ def process_user_input(user_input):
             add_message(f"Analyse du CV: {cv_analysis}", "Bot")
         else:
             add_message("Aucun CV enregistré. Veuillez entrer un CV en commençant par 'cv:'.", "Bot")
-    elif "analyse ce text" in user_input.lower() or "analyse cette offre" in user_input.lower():
+    elif "analyse cette offre" in user_input.lower():
         if job_text:
             prompt = f"Analyse l'offre d'emploi suivante:\n{job_text}\n\nAnalyse complète de l'offre d'emploi :"
             job_analysis = generate_response(prompt)
             add_message(f"Analyse de l'offre d'emploi: {job_analysis}", "Bot")
         else:
             add_message("Aucune offre d'emploi enregistrée. Veuillez entrer une offre d'emploi en commençant par 'offre:'.", "Bot")
+    elif "compare" in user_input.lower():
+        if cv_text and job_text:
+            prompt = f"Compare le CV suivant:\n{cv_text}\n\navec l'offre d'emploi suivante:\n{job_text}\n\nComparaison détaillée entre le CV et l'offre d'emploi :"
+            comparison = generate_response(prompt)
+            add_message(f"Comparaison: {comparison}", "Bot")
+        else:
+            add_message("Veuillez enregistrer un CV et une offre d'emploi avant de les comparer.", "Bot")
     else:
         add_message("Commande non reconnue. Veuillez entrer un CV en commençant par 'cv:' ou une offre d'emploi en commençant par 'offre:'.", "Bot")
-
-# Fonction pour analyser et comparer le CV et l'offre d'emploi
-def analyze_and_compare():
-    try:
-        prompt = f"Analyse le CV suivant:\n{cv_text}\n\nAnalyse complète du CV :"
-        cv_analysis = generate_response(prompt)
-
-        prompt = f"Analyse l'offre d'emploi suivante:\n{job_text}\n\nAnalyse complète de l'offre d'emploi :"
-        job_analysis = generate_response(prompt)
-
-        prompt = (f"Compare le CV suivant :\n{cv_text}\n\navec l'offre d'emploi suivante :\n{job_text}\n\n"
-                  "Comparaison détaillée entre le CV et l'offre d'emploi :")
-        comparison = generate_response(prompt)
-
-        add_message(f"Analyse du CV: {cv_analysis}", "Bot")
-        add_message(f"Analyse de l'offre d'emploi: {job_analysis}", "Bot")
-        add_message(f"Comparaison: {comparison}", "Bot")
-    except Exception as e:
-        add_message(f"Une erreur est survenue : {str(e)}", "Bot")
 
 # Fonction pour sélectionner les fichiers PDF et extraire leur texte
 def select_pdfs(is_cv=True):
