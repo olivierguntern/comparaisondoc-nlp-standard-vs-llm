@@ -13,9 +13,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 # Fonction pour générer les réponses GPT-2
-def generate_response(prompt, max_length=150):
+def generate_response(prompt, max_new_tokens=150):
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
-    outputs = model.generate(inputs, max_length=max_length, num_return_sequences=1, pad_token_id=tokenizer.eos_token_id)
+    outputs = model.generate(inputs, max_new_tokens=max_new_tokens, num_return_sequences=1, pad_token_id=tokenizer.eos_token_id)
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response
 
