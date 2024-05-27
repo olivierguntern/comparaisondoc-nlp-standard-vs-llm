@@ -14,6 +14,8 @@ model.to(device)
 # Fonction pour générer les réponses GPT-2
 def generate_response(prompt, max_new_tokens=150):
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
+    if inputs.size(1) > 1024 - max_new_tokens:
+        inputs = inputs[:, -1024 + max_new_tokens:]
     outputs = model.generate(inputs, max_new_tokens=max_new_tokens, num_return_sequences=1, pad_token_id=tokenizer.eos_token_id)
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response
