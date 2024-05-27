@@ -86,7 +86,7 @@ def display_report(report):
     for entry in report:
         report_text.insert(tk.END, f"CV: {entry['CV']}\n")
         report_text.insert(tk.END, f"Analyse du CV: {entry['Analyse du CV']}\n")
-        report_text.insert(tk.END, f"Analyse de l'offre d'emploi: {entry['Analyse de l'offre d'emploi']}\n")
+        report_text.insert(tk.END, f"Analyse de l'offre d'emploi: {entry['Analyse de l offre d emploi']}\n")
         report_text.insert(tk.END, f"Comparaison: {entry['Comparaison']}\n")
         report_text.insert(tk.END, "-"*100 + "\n")
 
