@@ -3,9 +3,9 @@ from tkinter import filedialog, scrolledtext, messagebox
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-# Charger le modèle et le tokenizer RoBERTa
-tokenizer = AutoTokenizer.from_pretrained("distilroberta-base")
-model = AutoModelForSequenceClassification.from_pretrained("distilroberta-base")
+# Charger le modèle et le tokenizer XLM-RoBERTa
+tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
+model = AutoModelForSequenceClassification.from_pretrained("xlm-roberta-base")
 
 # Fonction pour analyser un CV
 def analyze_cv(cv_text):

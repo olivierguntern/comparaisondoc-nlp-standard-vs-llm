@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, messagebox
 from tkinter.ttk import Progressbar
@@ -8,8 +7,8 @@ import torch
 from sklearn.metrics.pairwise import cosine_similarity
 import PyPDF2
 
-# Charger le modèle et le tokenizer LaBSE
-model_name = "sentence-transformers/LaBSE"
+# Charger le modèle et le tokenizer XLM-RoBERTa
+model_name = "xlm-roberta-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 
@@ -17,7 +16,7 @@ model = AutoModel.from_pretrained(model_name)
 def generate_embeddings(texts):
     inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=True)
     with torch.no_grad():
-        embeddings = model(**inputs).pooler_output
+        embeddings = model(**inputs).last_hidden_state.mean(dim=1)
     return embeddings
 
 # Pré-traitement des données
@@ -139,8 +138,3 @@ process_button = tk.Button(root, text="Lancer le traitement", command=process_da
 process_button.pack(pady=10)
 
 root.mainloop()
-
-
-
-
-
