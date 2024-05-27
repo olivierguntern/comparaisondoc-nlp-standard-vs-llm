@@ -52,7 +52,14 @@ def send_message(event=None):
 
 # Fonction pour traiter l'entrée utilisateur
 def process_user_input(user_input):
-    prompt = f"Voici un texte pour analyse:\n{user_input}\n\nRéponse détaillée :"
+    prompt = (
+        f"Voici un texte pour analyse:\n{user_input}\n\n"
+        "Réponse détaillée :\n"
+        "1. Donnez un résumé du texte.\n"
+        "2. Quels sont les points forts mentionnés dans le texte ?\n"
+        "3. Quelles compétences sont mises en avant dans le texte ?\n"
+        "4. Y a-t-il des informations supplémentaires pertinentes à noter ?"
+    )
     analysis = generate_response(prompt)
     add_message(f"Analyse: {analysis}", "Bot")
 
