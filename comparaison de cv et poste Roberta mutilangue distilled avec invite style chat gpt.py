@@ -4,7 +4,6 @@ from tkinter.ttk import Progressbar
 import pandas as pd
 from transformers import AutoTokenizer, AutoModel
 import torch
-from sklearn.metrics.pairwise import cosine_similarity
 import PyPDF2
 
 # Charger le modèle et le tokenizer DistilRoBERTa multilingue
@@ -37,7 +36,9 @@ def extract_text_from_pdfs(pdf_paths):
 
 # Fonction pour afficher le menu principal
 def show_menu():
-    menu_text = "Pour analyser un ou plusieurs CVs, une offre d'emploi ou comparer des CVs avec une offre d'emploi, veuillez choisir une option du menu ci-dessous :\n- a) Analyser des CV\n- b) Analyser une offre d'emploi\n- c) Comparer le ou les CV et l'offre d'emploi"
+    menu_text = ("Pour analyser un ou plusieurs CVs, une offre d'emploi ou comparer des CVs avec une offre d'emploi, "
+                 "veuillez choisir une option du menu ci-dessous :\n- a) Analyser des CV\n- b) Analyser une offre d'emploi\n"
+                 "- c) Comparer le ou les CV et l'offre d'emploi")
     menu_label.config(text=menu_text)
 
 # Fonction pour lancer l'analyse des CV
@@ -56,7 +57,7 @@ def analyze_cvs():
     for cv_text in cv_texts:
         report.append(analyze_single_cv(cv_text))
 
-    display_report(report)
+    display_report(report, "Analyse des CV")
     show_menu()
 
 # Fonction pour analyser un CV unique
@@ -77,7 +78,7 @@ def analyze_single_cv(cv_text):
         "Adéquation culturelle": "Bonne",
         "Évolution de carrière": "Présente",
         "Activités et intérêts personnels": "Présents",
-        "Métiers possibles": "Liste de métiers"
+        "Métiers possibles": "Liste de métiers possibles avec synonymes"
     }
     return summary
 
@@ -94,7 +95,7 @@ def analyze_job():
 
     # Analyse de l'offre d'emploi
     report = analyze_single_job(job_text)
-    display_report([report])
+    display_report([report], "Analyse de l'offre d'emploi")
     show_menu()
 
 # Fonction pour analyser une offre d'emploi unique
@@ -130,25 +131,40 @@ def compare_cv_and_job():
     cv_embeddings = generate_embeddings(cv_texts)
     job_embedding = generate_embeddings([job_text])[0]
 
-    # Calculer la similarité cosinus
-    similarity_scores = cosine_similarity(cv_embeddings, job_embedding.unsqueeze(0)).flatten()
-
     # Générer le rapport de comparaison
     report = []
-    for i, score in enumerate(similarity_scores):
-        report.append({
-            "CV": cv_texts[i][:30] + "...",
-            "Description de poste": job_text[:30] + "...",
-            "Score de similarité": score * 100  # Convertir en pourcentage
-        })
+    for i, cv_text in enumerate(cv_texts):
+        report.append(compare_single_cv_and_job(cv_text, job_text, cv_embeddings[i], job_embedding))
 
-    display_report(report)
+    display_report(report, "Comparaison des CV et de l'offre d'emploi")
     show_menu()
 
+# Fonction pour comparer un CV unique et une offre d'emploi unique
+def compare_single_cv_and_job(cv_text, job_text, cv_embedding, job_embedding):
+    # Calcul de la similarité (méthode illustrée ici, mais peut être étendue)
+    similarity_score = cosine_similarity(cv_embedding.unsqueeze(0), job_embedding.unsqueeze(0)).flatten()[0]
+
+    # Points forts et faibles (exemple simplifié, à adapter selon le cas réel)
+    points_forts = []
+    points_faibles = []
+
+    if similarity_score > 0.8:
+        points_forts.append("Le CV est très aligné avec les exigences de l'offre d'emploi.")
+    else:
+        points_faibles.append("Le CV ne correspond pas pleinement aux exigences de l'offre d'emploi.")
+
+    summary = {
+        "CV": cv_text[:100] + "...",
+        "Description de poste": job_text[:100] + "...",
+        "Points forts": "; ".join(points_forts) if points_forts else "Aucun point fort notable",
+        "Points faibles": "; ".join(points_faibles) if points_faibles else "Aucun point faible notable"
+    }
+    return summary
+
 # Fonction pour afficher le rapport détaillé
-def display_report(report):
+def display_report(report, title):
     report_window = tk.Toplevel(root)
-    report_window.title("Rapport d'analyse")
+    report_window.title(title)
 
     report_text = scrolledtext.ScrolledText(report_window, width=100, height=30)
     report_text.pack(padx=10, pady=10)
